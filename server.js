@@ -6,7 +6,6 @@ require('dotenv').config();
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
-
 const app = express();
 
 // Conectando ao MongoDB
