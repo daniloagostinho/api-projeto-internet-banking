@@ -14,13 +14,27 @@ const JWT_SECRET = process.env.JWT_SECRET;
 class UserController {
     static async register(req, res) {
         try {
-            let existingUser = await User.findOne({ email: req.body.email });
+            const { name, phone, email, password, birthDate } = req.body;
+            
+            // Aqui poderia ter validações dos campos recebidos no req.body
+
+            let existingUser = await User.findOne({ email });
             if (existingUser) {
                 return res.status(400).json({ error: 'Email já cadastrado na base!' });
             }
-            let user = await User.create(req.body);
-            let token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+            
+            let user = await User.create({
+                name,
+                phone,
+                email,
+                password,
+                birthDate,
+                identityPhoto: req.file.path
+            });
+            
+            let token = jwt.sign({ id: user._id }, JWT_SECRET);
             res.json({ token });
+            
         } catch (err) {
             res.status(400).json({ error: err.message });
         }
@@ -37,7 +51,7 @@ class UserController {
             if (!match) {
                 return res.json({ mensagem: 'Senha inválida' });
             }
-            let token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+            let token = jwt.sign({ id: user._id }, JWT_SECRET);
             res.json({ token });
         } catch (err) {
             res.status(400).json({ error: err.message });
@@ -60,25 +74,25 @@ class UserController {
             const transporter = nodemailer.createTransport({
                 service: 'Outlook365',
                 auth: {
-                    user: process.env.EMAIL_USERNAME,
-                    pass: process.env.EMAIL_PASSWORD
+                    user: EMAIL_USERNAME,
+                    pass: EMAIL_PASSWORD
                 }
             });
 
             const mailOptions = {
                 to: user.email,
-                from: process.env.EMAIL_USERNAME,
+                from: EMAIL_USERNAME,
                 subject: 'Recuperação de senha',
                 text: `Clique no link a seguir ou cole-o em seu navegador para concluir o processo: \n\nhttp://${req.headers.host}/user/reset\n\n Se você não solicitou isso, ignore este e-mail e sua senha permanecerá inalterada. \n`
             };
 
             transporter.sendMail(mailOptions, (err) => {
                 if (err) {
-                  console.log(err); // Adicione essa linha
-                  return res.status(500).json({ error: 'Não foi possível enviar o e-mail de recuperação!' });
+                    console.log(err); // Adicione essa linha
+                    return res.status(500).json({ error: 'Não foi possível enviar o e-mail de recuperação!' });
                 }
                 res.json({ message: 'E-mail de recuperação enviado', resetPassWordToken: user.resetPasswordToken });
-              });
+            });
 
         } catch (err) {
             res.status(500).json({ error: err.message });
