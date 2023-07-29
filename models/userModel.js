@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
     identityPhoto: { type: String, required: true },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    emailVerificationCode: { type: Number }
 });
 
 userSchema.pre('save', async function (next) {

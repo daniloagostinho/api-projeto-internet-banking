@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
+
 require('dotenv').config();
 
 const EMAIL_USERNAME = process.env.EMAIL_USERNAME;
@@ -15,14 +16,14 @@ class UserController {
     static async register(req, res) {
         try {
             const { name, phone, email, password, birthDate } = req.body;
-            
+
             // Aqui poderia ter validações dos campos recebidos no req.body
 
             let existingUser = await User.findOne({ email });
             if (existingUser) {
                 return res.status(400).json({ error: 'Email já cadastrado na base!' });
             }
-            
+
             let user = await User.create({
                 name,
                 phone,
@@ -31,10 +32,10 @@ class UserController {
                 birthDate,
                 identityPhoto: req.file.path
             });
-            
+
             let token = jwt.sign({ id: user._id }, JWT_SECRET);
             res.json({ token });
-            
+
         } catch (err) {
             res.status(400).json({ error: err.message });
         }
@@ -118,6 +119,61 @@ class UserController {
             await user.save();
 
             res.json({ message: 'Senha resetada com sucesso!' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
+
+    static async sendVerificationCode(req, res) {
+        try {
+            let user = await User.findOne({ email: req.body.email });
+            if (!user) {
+                return res.status(400).json({ error: 'Usuário não encontrado' });
+            }
+            // Gerar um código de verificação aleatório
+            let verificationCode = Math.floor(1000 + Math.random() * 9000);
+
+            // Configurar o cliente Nodemailer
+            let transporter = nodemailer.createTransport({
+                service: 'Outlook365', // Seu serviço de email aqui
+                auth: {
+                    user: EMAIL_USERNAME,
+                    pass: EMAIL_PASSWORD
+                }
+            });
+
+            // Enviar o código de verificação via email
+            await transporter.sendMail({
+                from: EMAIL_USERNAME,
+                to: user.email,
+                subject: 'Código de Verificação',
+                text: `Seu código de verificação é: ${verificationCode}`,
+            });
+            // Salvar o código de verificação no usuário
+            user.emailVerificationCode = verificationCode;
+            await user.save();
+
+            res.json({ message: 'Código de verificação enviado com sucesso' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
+
+    static async validateVerificationCode(req, res) {
+        try {
+            let user = await User.findOne({ email: req.body.email });
+            if (!user) {
+                return res.status(400).json({ error: 'Usuário não encontrado' });
+            }
+            if (req.body.verificationCode !== user.emailVerificationCode) {
+                return res.status(400).json({ error: 'Código de verificação inválido' });
+            }
+            // Caso o código de verificação esteja correto, marcamos o email como verificado
+            user.emailVerified = true;
+            user.emailVerificationCode = undefined; // Limpar o código de verificação
+            await user.save();
+
+            res.json({ message: 'Email verificado com sucesso' });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
