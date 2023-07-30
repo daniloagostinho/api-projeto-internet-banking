@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 class UserController {
     static async register(req, res) {
         try {
-            const { name, phone, email, password, birthDate } = req.body;
+            const { name, phone, email, password } = req.body;
 
             // Aqui poderia ter validações dos campos recebidos no req.body
 
@@ -29,7 +29,6 @@ class UserController {
                 phone,
                 email,
                 password,
-                birthDate,
                 identityPhoto: req.file.path
             });
 
