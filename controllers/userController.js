@@ -5,7 +5,6 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
-
 require('dotenv').config();
 
 const EMAIL_USERNAME = process.env.EMAIL_USERNAME;
@@ -15,19 +14,25 @@ const JWT_SECRET = process.env.JWT_SECRET;
 class UserController {
     static async register(req, res) {
         try {
-            const { name, phone, email, password } = req.body;
+            const { name, email, password, cpf } = req.body;
 
             // Aqui poderia ter validações dos campos recebidos no req.body
 
             let existingUser = await User.findOne({ email });
+            let existingCPF = await User.findOne({ cpf });
+            
             if (existingUser) {
                 return res.status(400).json({ error: 'Email já cadastrado na base!' });
             }
 
+            if (existingCPF) {
+                return res.status(400).json({ error: 'CPF já cadastrado na base!' });
+            }
+
             let user = await User.create({
                 name,
-                phone,
                 email,
+                cpf,
                 password,
                 identityPhoto: req.file.path
             });
