@@ -19,7 +19,7 @@ router.post('/register', upload.single('identityPhoto'), userController.register
 router.post('/login', userController.login);
 router.post('/recover', userController.recover);
 router.post('/reset', userController.resetPassword);
-router.post('/send/codeverification', userController.sendVerificationCode)
+router.post('/send/code-verification', userController.sendVerificationCode)
 router.post('/validate/verification-code', userController.validateVerificationCode)
 
 module.exports = router;

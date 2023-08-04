@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Verification = require('../models/verificationModel')
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
@@ -14,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 class UserController {
     static async register(req, res) {
         try {
-            const { name, email, password, cpf } = req.body;
+            const { name, email, cpf, password } = req.body;
 
             // Aqui poderia ter validações dos campos recebidos no req.body
 
@@ -33,8 +34,7 @@ class UserController {
                 name,
                 email,
                 cpf,
-                password,
-                identityPhoto: req.file.path
+                password
             });
 
             let token = jwt.sign({ id: user._id }, JWT_SECRET);
@@ -47,7 +47,7 @@ class UserController {
 
     static async login(req, res) {
         try {
-            let user = await User.findOne({ email: req.body.email });
+            let user = await User.findOne({ cpf: req.body.cpf });
             if (!user) {
                 res.json({ mensagem: 'Usuário não encontrado' });
                 throw new Error('Usuário não encontrado');
@@ -130,13 +130,9 @@ class UserController {
 
     static async sendVerificationCode(req, res) {
         try {
-            let user = await User.findOne({ email: req.body.email });
-            if (!user) {
-                return res.status(400).json({ error: 'Usuário não encontrado' });
-            }
             // Gerar um código de verificação aleatório
             let verificationCode = Math.floor(1000 + Math.random() * 9000);
-
+    
             // Configurar o cliente Nodemailer
             let transporter = nodemailer.createTransport({
                 service: 'Outlook365', // Seu serviço de email aqui
@@ -145,43 +141,57 @@ class UserController {
                     pass: EMAIL_PASSWORD
                 }
             });
-
+    
             // Enviar o código de verificação via email
             await transporter.sendMail({
                 from: EMAIL_USERNAME,
-                to: user.email,
+                to: req.body.email,
                 subject: 'Código de Verificação',
                 text: `Seu código de verificação é: ${verificationCode}`,
             });
-            // Salvar o código de verificação no usuário
-            user.emailVerificationCode = verificationCode;
-            await user.save();
-
+    
+            // Verificar se já existe um registro de verificação para este email
+            let verification = await Verification.findOne({ email: req.body.email });
+            
+            if (verification) {
+                // Atualizar o código de verificação se o registro já existir
+                verification.code = verificationCode;
+            } else {
+                // Criar um novo registro se ele não existir
+                verification = new Verification({ email: req.body.email, code: verificationCode });
+            }
+    
+            // Salvar o código de verificação no banco de dados
+            await verification.save();
+    
             res.json({ message: 'Código de verificação enviado com sucesso' });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
     }
+    
 
     static async validateVerificationCode(req, res) {
         try {
-            let user = await User.findOne({ email: req.body.email });
-            if (!user) {
-                return res.status(400).json({ error: 'Usuário não encontrado' });
-            }
-            if (req.body.verificationCode !== user.emailVerificationCode) {
+            // Procurar o registro de verificação para este email
+            let verification = await Verification.findOne({ email: req.body.email });
+            if (req.body.code !== verification.code) {
                 return res.status(400).json({ error: 'Código de verificação inválido' });
             }
+            let user = await User.findOne({ email: req.body.email });
             // Caso o código de verificação esteja correto, marcamos o email como verificado
             user.emailVerified = true;
-            user.emailVerificationCode = undefined; // Limpar o código de verificação
             await user.save();
-
+    
+            // Após a verificação, podemos remover o registro de verificação
+            await Verification.deleteOne({ email: req.body.email });
+    
             res.json({ message: 'Email verificado com sucesso' });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
     }
+    
 }
 
 module.exports = UserController;
