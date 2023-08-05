@@ -178,10 +178,7 @@ class UserController {
             if (req.body.code !== verification.code) {
                 return res.status(400).json({ error: 'Código de verificação inválido' });
             }
-            let user = await User.findOne({ email: req.body.email });
             // Caso o código de verificação esteja correto, marcamos o email como verificado
-            user.emailVerified = true;
-            await user.save();
     
             // Após a verificação, podemos remover o registro de verificação
             await Verification.deleteOne({ email: req.body.email });
