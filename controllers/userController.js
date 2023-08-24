@@ -67,7 +67,7 @@ class UserController {
         try {
             const user = await User.findOne({ email: req.body.email });
             if (!user) {
-                return res.status(400).json({ messagem: 'Email não encontrado' });
+                return res.status(400).json({ error: 'Email não encontrado' });
             }
 
             // Gere um token de reset de senha
