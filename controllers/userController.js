@@ -88,7 +88,7 @@ class UserController {
                 to: user.email,
                 from: EMAIL_USERNAME,
                 subject: 'Recuperação de senha',
-                text: `Clique no link a seguir ou cole-o em seu navegador para concluir o processo: \n\nhttp://${req.headers.host}/user/reset\n\n Se você não solicitou isso, ignore este e-mail e sua senha permanecerá inalterada. \n`
+                text: `Clique no link a seguir ou cole-o em seu navegador para concluir o processo: \n\nhttp://localhost:4200/reset-password\n\n Se você não solicitou isso, ignore este e-mail e sua senha permanecerá inalterada. \n`
             };
 
             transporter.sendMail(mailOptions, (err) => {
