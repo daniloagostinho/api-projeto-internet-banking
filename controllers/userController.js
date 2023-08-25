@@ -49,17 +49,16 @@ class UserController {
         try {
             let user = await User.findOne({ cpf: req.body.cpf });
             if (!user) {
-                res.json({ mensagem: 'Usuário não encontrado' });
-                throw new Error('Usuário não encontrado');
+                return res.status(400).json({ error: 'Usuário não encontrado' });
             }
             let match = await bcrypt.compare(req.body.password, user.password);
             if (!match) {
-                return res.json({ mensagem: 'Senha inválida' });
+                return res.status(401).json({ error: 'Senha inválida' });
             }
             let token = jwt.sign({ id: user._id }, JWT_SECRET);
-            res.json({ token });
+            return res.json({ token });
         } catch (err) {
-            res.status(400).json({ error: err.message });
+            return res.status(500).json({ error: err.message });
         }
     }
 
@@ -96,7 +95,7 @@ class UserController {
                     console.log(err); // Adicione essa linha
                     return res.status(500).json({ error: 'Não foi possível enviar o e-mail de recuperação!' });
                 }
-                res.json({ message: 'E-mail de recuperação enviado', resetPassWordToken: user.resetPasswordToken });
+                return res.json({ message: 'E-mail de recuperação enviado', resetPassWordToken: user.resetPasswordToken });
             });
 
         } catch (err) {
@@ -122,7 +121,7 @@ class UserController {
 
             await user.save();
 
-            res.json({ message: 'Senha resetada com sucesso!' });
+            return res.json({ message: 'Senha resetada com sucesso!' });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -164,7 +163,7 @@ class UserController {
             // Salvar o código de verificação no banco de dados
             await verification.save();
     
-            res.json({ message: 'Código de verificação enviado com sucesso' });
+            return res.json({ message: 'Código de verificação enviado com sucesso' });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -183,7 +182,7 @@ class UserController {
             // Após a verificação, podemos remover o registro de verificação
             await Verification.deleteOne({ email: req.body.email });
     
-            res.json({ message: 'Email verificado com sucesso' });
+            return res.json({ message: 'Email verificado com sucesso' });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
