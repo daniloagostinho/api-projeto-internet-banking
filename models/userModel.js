@@ -6,7 +6,6 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     cpf: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    identityPhoto: { type: String},
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
     emailVerificationCode: { type: Number }
