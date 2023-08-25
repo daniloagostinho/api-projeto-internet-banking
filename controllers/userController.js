@@ -1,5 +1,6 @@
 const User = require('../models/userModel');
-const Verification = require('../models/verificationModel')
+const Verification = require('../models/verificationModel');
+const Account = require('../models/accountModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
@@ -17,8 +18,7 @@ class UserController {
         try {
             const { name, email, cpf, password } = req.body;
 
-            // Aqui poderia ter validações dos campos recebidos no req.body
-
+            // Verificar se usuário ou CPF já existe
             let existingUser = await User.findOne({ email });
             let existingCPF = await User.findOne({ cpf });
             
@@ -30,6 +30,7 @@ class UserController {
                 return res.status(400).json({ error: 'CPF já cadastrado na base!' });
             }
 
+            // Criar o usuário
             let user = await User.create({
                 name,
                 email,
@@ -37,6 +38,14 @@ class UserController {
                 password
             });
 
+            // Criar uma conta corrente para o usuário
+            let newAccount = new Account({
+                userId: user._id, // Associar a conta corrente ao usuário
+                balance: 0 // Iniciar com saldo zero
+            });
+            await newAccount.save();
+
+            // Gerar e retornar o token de autenticação
             let token = jwt.sign({ id: user._id }, JWT_SECRET);
             res.json({ token });
 
