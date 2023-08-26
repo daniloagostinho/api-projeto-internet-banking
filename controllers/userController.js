@@ -174,7 +174,7 @@ class UserController {
     
             return res.json({ message: 'Código de verificação enviado com sucesso' });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: err.message });
         }
     }
     
